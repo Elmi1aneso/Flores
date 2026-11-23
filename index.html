@@ -28,6 +28,39 @@
       user-select: none;
       text-align: center;
     }
+    #overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      background: rgba(11, 11, 15, 0.88);
+      backdrop-filter: blur(8px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      transition: opacity 0.6s ease;
+    }
+    #overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    #start-btn {
+      background: rgba(255, 105, 180, 0.22);
+      color: #ffd1e8;
+      border: 1px solid rgba(255, 135, 195, 0.65);
+      border-radius: 999px;
+      padding: 14px 28px;
+      font-family: inherit;
+      font-size: 16px;
+      cursor: pointer;
+      box-shadow: 0 0 25px rgba(255, 105, 180, 0.25);
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+    #start-btn:hover {
+      background: rgba(255, 105, 180, 0.35);
+      transform: scale(1.05);
+    }
     #music-btn {
       position: fixed;
       bottom: 18px;
@@ -48,25 +81,18 @@
       background: rgba(255, 105, 180, 0.3);
       transform: scale(1.04);
     }
-    #yt-player {
-      position: fixed;
-      top: -100px;
-      left: -100px;
-      width: 10px;
-      height: 10px;
-      opacity: 0.01;
-      pointer-events: none;
-    }
   </style>
 </head>
 <body>
+  <div id="overlay">
+    <button id="start-btn" type="button">♥ Abrir sorpresa ♥</button>
+  </div>
+
   <pre id="screen"></pre>
-  <button id="music-btn" type="button">🎵 Activar música</button>
-  <div id="yt-player"></div>
+  <button id="music-btn" type="button">⏸ Pausar música</button>
+  <audio id="bg-music" src="musica.mp3" loop preload="auto"></audio>
 
   <script>
-    const YOUTUBE_VIDEO_ID = "CTedtTud2EM";
-
     const SPIN_SPEED = 0.55;
     const TILT = 0.32;
     const CAM_DIST = 4.6;
@@ -558,67 +584,36 @@
     }
     requestAnimationFrame(loop);
 
-    // Control de música de fondo con YouTube
-    let player = null;
-    let isPlaying = false;
+    // Reproducción directa desde archivo musica.mp3
+    const audio = document.getElementById("bg-music");
+    const overlay = document.getElementById("overlay");
+    const startBtn = document.getElementById("start-btn");
     const musicBtn = document.getElementById("music-btn");
+    audio.volume = 0.75;
 
-    const tag = document.createElement("script");
-    tag.src = "https://www.youtube.com/iframe_api";
-    document.head.appendChild(tag);
-
-    window.onYouTubeIframeAPIReady = function () {
-      player = new YT.Player("yt-player", {
-        height: "10",
-        width: "10",
-        videoId: YOUTUBE_VIDEO_ID,
-        playerVars: {
-          autoplay: 0,
-          loop: 1,
-          playlist: YOUTUBE_VIDEO_ID,
-          controls: 0,
-          playsinline: 1,
-        },
-        events: {
-          onStateChange: function (event) {
-            if (event.data === YT.PlayerState.PLAYING) {
-              isPlaying = true;
-              musicBtn.textContent = "⏸ Pausar música";
-            } else if (event.data === YT.PlayerState.PAUSED) {
-              isPlaying = false;
-              musicBtn.textContent = "🎵 Activar música";
-            }
-          },
-          onError: function () {
-            musicBtn.textContent = "⚠️ Video bloqueado por YT";
-          },
-        },
+    function startExperience() {
+      overlay.classList.add("hidden");
+      audio.play().then(() => {
+        musicBtn.textContent = "⏸ Pausar música";
+      }).catch(() => {
+        musicBtn.textContent = "🎵 Activar música";
       });
-    };
-
-    function toggleMusic(e) {
-      if (e) e.stopPropagation();
-      if (!player || typeof player.playVideo !== "function") return;
-      if (isPlaying) {
-        player.pauseVideo();
-      } else {
-        player.setVolume(75);
-        player.playVideo();
-      }
     }
 
-    musicBtn.addEventListener("click", toggleMusic);
+    startBtn.addEventListener("click", startExperience);
+    overlay.addEventListener("click", startExperience);
 
-    document.body.addEventListener(
-      "click",
-      function () {
-        if (!isPlaying && player && typeof player.playVideo === "function") {
-          player.setVolume(75);
-          player.playVideo();
-        }
-      },
-      { once: true }
-    );
+    musicBtn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (audio.paused) {
+        audio.play().then(() => {
+          musicBtn.textContent = "⏸ Pausar música";
+        });
+      } else {
+        audio.pause();
+        musicBtn.textContent = "🎵 Activar música";
+      }
+    });
   </script>
 </body>
 </html>
