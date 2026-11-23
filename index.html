@@ -28,12 +28,44 @@
       user-select: none;
       text-align: center;
     }
+    #music-btn {
+      position: fixed;
+      bottom: 18px;
+      right: 18px;
+      z-index: 20;
+      background: rgba(255, 105, 180, 0.16);
+      color: #ffb6d9;
+      border: 1px solid rgba(255, 135, 195, 0.45);
+      border-radius: 999px;
+      padding: 9px 16px;
+      font-family: inherit;
+      font-size: 13px;
+      cursor: pointer;
+      backdrop-filter: blur(6px);
+      transition: all 0.25s ease;
+    }
+    #music-btn:hover {
+      background: rgba(255, 105, 180, 0.3);
+      transform: scale(1.04);
+    }
+    #yt-player {
+      position: fixed;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
   <pre id="screen"></pre>
+  <button id="music-btn" type="button">🎵 Activar música</button>
+  <div id="yt-player"></div>
 
   <script>
+
+    const YOUTUBE_VIDEO_ID = "aE7c7B53yL4";
+
     const SPIN_SPEED = 0.55;
     const TILT = 0.32;
     const CAM_DIST = 4.6;
@@ -41,7 +73,6 @@
     const NUM_HEARTS = 22;
     const PIVOT_Y = 0.25;
 
-    // Conversión exacta de paleta ANSI 256 a RGB Hex
     function ansiToHex(code) {
       if (code >= 232) {
         const v = 8 + (code - 232) * 10;
@@ -295,7 +326,6 @@
     function updateGridSize() {
       const w = window.innerWidth;
       const h = window.innerHeight;
-      // Ajuste responsivo automático para celular y escritorio
       const targetRows = w < 600 ? 44 : 52;
       const fontSize = Math.max(7, Math.floor(h / (targetRows * 1.06)));
       screenEl.style.fontSize = fontSize + "px";
@@ -484,7 +514,6 @@
         }
       }
 
-      // Renderizado optimizado agrupando caracteres del mismo color
       let html = "";
       for (let r = 0; r < rows; r++) {
         const rc = chars[r];
@@ -527,6 +556,67 @@
       requestAnimationFrame(loop);
     }
     requestAnimationFrame(loop);
+
+    // =========================================================
+    // CONTROL DE MÚSICA DE FONDO (API OFICIAL DE YOUTUBE)
+    // =========================================================
+    let player = null;
+    let isPlaying = false;
+    const musicBtn = document.getElementById("music-btn");
+
+    const tag = document.createElement("script");
+    tag.src = "https://www.youtube.com/iframe_api";
+    document.head.appendChild(tag);
+
+    window.onYouTubeIframeAPIReady = function () {
+      player = new YT.Player("yt-player", {
+        height: "1",
+        width: "1",
+        videoId: YOUTUBE_VIDEO_ID,
+        playerVars: {
+          autoplay: 0,
+          loop: 1,
+          playlist: YOUTUBE_VIDEO_ID,
+          controls: 0,
+        },
+        events: {
+          onStateChange: function (event) {
+            if (event.data === YT.PlayerState.PLAYING) {
+              isPlaying = true;
+              musicBtn.textContent = "⏸ Pausar música";
+            } else if (event.data === YT.PlayerState.PAUSED) {
+              isPlaying = false;
+              musicBtn.textContent = "🎵 Activar música";
+            }
+          },
+        },
+      });
+    };
+
+    function toggleMusic(e) {
+      if (e) e.stopPropagation();
+      if (!player || typeof player.playVideo !== "function") return;
+      if (isPlaying) {
+        player.pauseVideo();
+      } else {
+        player.setVolume(70);
+        player.playVideo();
+      }
+    }
+
+    musicBtn.addEventListener("click", toggleMusic);
+
+    // También arranca automáticamente al primer toque en cualquier parte de la pantalla
+    document.body.addEventListener(
+      "click",
+      function () {
+        if (!isPlaying && player && typeof player.playVideo === "function") {
+          player.setVolume(70);
+          player.playVideo();
+        }
+      },
+      { once: true }
+    );
   </script>
 </body>
 </html>
