@@ -50,9 +50,11 @@
     }
     #yt-player {
       position: fixed;
-      width: 1px;
-      height: 1px;
-      opacity: 0;
+      top: -100px;
+      left: -100px;
+      width: 10px;
+      height: 10px;
+      opacity: 0.01;
       pointer-events: none;
     }
   </style>
@@ -63,8 +65,7 @@
   <div id="yt-player"></div>
 
   <script>
-
-    const YOUTUBE_VIDEO_ID = "aE7c7B53yL4";
+    const YOUTUBE_VIDEO_ID = "CTedtTud2EM";
 
     const SPIN_SPEED = 0.55;
     const TILT = 0.32;
@@ -557,9 +558,7 @@
     }
     requestAnimationFrame(loop);
 
-    // =========================================================
-    // CONTROL DE MÚSICA DE FONDO (API OFICIAL DE YOUTUBE)
-    // =========================================================
+    // Control de música de fondo con YouTube
     let player = null;
     let isPlaying = false;
     const musicBtn = document.getElementById("music-btn");
@@ -570,14 +569,15 @@
 
     window.onYouTubeIframeAPIReady = function () {
       player = new YT.Player("yt-player", {
-        height: "1",
-        width: "1",
+        height: "10",
+        width: "10",
         videoId: YOUTUBE_VIDEO_ID,
         playerVars: {
           autoplay: 0,
           loop: 1,
           playlist: YOUTUBE_VIDEO_ID,
           controls: 0,
+          playsinline: 1,
         },
         events: {
           onStateChange: function (event) {
@@ -589,6 +589,9 @@
               musicBtn.textContent = "🎵 Activar música";
             }
           },
+          onError: function () {
+            musicBtn.textContent = "⚠️ Video bloqueado por YT";
+          },
         },
       });
     };
@@ -599,19 +602,18 @@
       if (isPlaying) {
         player.pauseVideo();
       } else {
-        player.setVolume(70);
+        player.setVolume(75);
         player.playVideo();
       }
     }
 
     musicBtn.addEventListener("click", toggleMusic);
 
-    // También arranca automáticamente al primer toque en cualquier parte de la pantalla
     document.body.addEventListener(
       "click",
       function () {
         if (!isPlaying && player && typeof player.playVideo === "function") {
-          player.setVolume(70);
+          player.setVolume(75);
           player.playVideo();
         }
       },
